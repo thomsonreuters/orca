@@ -22,12 +22,10 @@ import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-@Component
 public class AkkaTaskTaskletAdapter implements TaskTaskletAdapter {
 
   private final ClusterSharding cluster;
 
-  @Autowired
   public AkkaTaskTaskletAdapter(ClusterSharding cluster) {
     this.cluster = cluster;
   }
