@@ -40,4 +40,8 @@ interface Task {
   ExecutionStatus getStatus()
 
   void setStatus(ExecutionStatus status)
+
+  String getImplementationClass()
+
+  void setImplementationClass(String implementationClass)
 }

@@ -56,6 +56,7 @@ class PipelineStarter extends ExecutionStarter<Pipeline> {
       .withLimitConcurrent(config.limitConcurrent as Boolean)
       .withExecutingInstance(currentInstance)
       .withNotifications((List<Map<String, Object>>) config.notifications)
+      .withAkka(config.runWithAkka as Boolean)
       .build()
   }
 

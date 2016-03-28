@@ -15,6 +15,8 @@
  */
 
 package com.netflix.spinnaker.orca.pipeline
+
+import com.netflix.spinnaker.orca.Task
 import com.netflix.spinnaker.orca.pipeline.model.Stage
 import com.netflix.spinnaker.orca.pipeline.tasks.WaitTask
 import groovy.transform.CompileStatic
@@ -23,7 +25,7 @@ import org.springframework.stereotype.Component
 
 @CompileStatic
 @Component
-class WaitStage extends LinearStage {
+class WaitStage extends LinearStage implements AkkaStepProvider {
   static final String PIPELINE_CONFIG_TYPE = "wait"
 
   WaitStage() {
@@ -33,5 +35,12 @@ class WaitStage extends LinearStage {
   @Override
   public List<Step> buildSteps(Stage stage) {
     [buildStep(stage, "wait", WaitTask)]
+  }
+
+  @Override
+  List<AkkaStepProvider.StepDefinition> buildAkkaSteps(Stage stage) {
+    [
+        new AkkaStepProvider.StepDefinition(id: "1", name: "wait", taskClass: WaitTask)
+    ]
   }
 }

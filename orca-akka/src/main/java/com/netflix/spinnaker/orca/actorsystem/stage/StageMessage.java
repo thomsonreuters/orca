@@ -17,6 +17,10 @@
 package com.netflix.spinnaker.orca.actorsystem.stage;
 
 import com.netflix.spinnaker.orca.ExecutionStatus;
+import com.netflix.spinnaker.orca.actorsystem.execution.ExecutionId;
+import com.netflix.spinnaker.orca.actorsystem.execution.ExecutionMessage;
+import com.netflix.spinnaker.orca.actorsystem.task.TaskId;
+
 import static com.netflix.spinnaker.orca.ExecutionStatus.CANCELED;
 
 public abstract class StageMessage {
@@ -31,17 +35,43 @@ public abstract class StageMessage {
     return id;
   }
 
+  public static class RequestStage extends StageMessage {
+    public RequestStage(StageId identifier) {
+      super(identifier);
+    }
+
+    public RequestStage(String executionId, String stageId) {
+      this(new StageId(executionId, stageId));
+    }
+  }
+
+  public static class ExecuteStage extends StageMessage {
+    public ExecuteStage(StageId identifier) {
+      super(identifier);
+    }
+
+    public ExecuteStage(String executionId, String stageId) {
+      this(new StageId(executionId, stageId));
+    }
+  }
+
   public static abstract class TaskStatusUpdate extends StageMessage {
 
-    private final ExecutionStatus status;
+    final TaskId taskId;
+    final ExecutionStatus status;
 
-    public TaskStatusUpdate(StageId id, ExecutionStatus status) {
-      super(id);
+    public TaskStatusUpdate(TaskId id, ExecutionStatus status) {
+      super(id.stage());
+      this.taskId = id;
       this.status = status;
     }
 
     public ExecutionStatus status() {
       return status;
+    }
+
+    public TaskId task() {
+      return taskId;
     }
   }
 
@@ -49,7 +79,7 @@ public abstract class StageMessage {
    * Task has completed execution either successfully or not.
    */
   public static class TaskComplete extends TaskStatusUpdate {
-    public TaskComplete(StageId id, ExecutionStatus status) {
+    public TaskComplete(TaskId id, ExecutionStatus status) {
       super(id, status);
     }
   }
@@ -58,7 +88,7 @@ public abstract class StageMessage {
    * Task is not yet complete.
    */
   public static class TaskIncomplete extends TaskStatusUpdate {
-    public TaskIncomplete(StageId id, ExecutionStatus status) {
+    public TaskIncomplete(TaskId id, ExecutionStatus status) {
       super(id, status);
     }
   }
@@ -67,7 +97,7 @@ public abstract class StageMessage {
    * Task has been cancelled because the execution has been cancelled.
    */
   public static class TaskCancelled extends TaskStatusUpdate {
-    public TaskCancelled(StageId id) {
+    public TaskCancelled(TaskId id) {
       super(id, CANCELED);
     }
   }
@@ -76,7 +106,7 @@ public abstract class StageMessage {
    * Task is being skipped because it already had a completed status.
    */
   public static class TaskSkipped extends TaskStatusUpdate {
-    public TaskSkipped(StageId id, ExecutionStatus status) {
+    public TaskSkipped(TaskId id, ExecutionStatus status) {
       super(id, status);
     }
   }

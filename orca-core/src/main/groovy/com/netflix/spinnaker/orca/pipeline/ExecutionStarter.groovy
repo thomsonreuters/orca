@@ -47,6 +47,7 @@ abstract class ExecutionStarter<T extends Execution> {
   @Autowired protected JobLauncher launcher
   @Autowired protected JobOperator jobOperator
   @Autowired protected JobRepository jobRepository
+  @Autowired protected Collection<ExecutionRunner> executionRunners
   @Autowired protected ObjectMapper mapper
   @Autowired @Qualifier("instanceInfo") protected InstanceInfo currentInstance
 
@@ -64,6 +65,14 @@ abstract class ExecutionStarter<T extends Execution> {
   }
 
   T startExecution(T subject) {
+    def runner = executionRunners.find { it.supports(subject) }
+    if (runner) {
+      return (T) runner.run(subject);
+    }
+    return run(subject)
+  }
+
+  T run(T subject) {
     def job = createJob(subject)
     if (subject instanceof Pipeline) {
       // restarting the job in a different host leads to duplicate stages being created wtih the same id. This removes it.

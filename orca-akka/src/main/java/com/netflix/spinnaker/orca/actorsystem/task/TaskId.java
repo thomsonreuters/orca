@@ -18,6 +18,9 @@ package com.netflix.spinnaker.orca.actorsystem.task;
 
 import java.io.Serializable;
 import java.util.Objects;
+
+import com.netflix.spinnaker.orca.actorsystem.execution.ExecutionId;
+import com.netflix.spinnaker.orca.actorsystem.execution.ExecutionMessage;
 import com.netflix.spinnaker.orca.actorsystem.stage.StageId;
 import static java.lang.String.format;
 

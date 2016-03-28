@@ -90,6 +90,11 @@ class Pipeline extends Execution<Pipeline> {
       return this
     }
 
+    Builder withAkka(Boolean withAkka) {
+      pipeline.runWithAkka = withAkka
+      return this
+    }
+
     Pipeline build() {
       pipeline.buildTime = System.currentTimeMillis()
       pipeline.authentication = Execution.AuthenticationDetails.build().orElse(new Execution.AuthenticationDetails())

@@ -1,7 +1,7 @@
 /*
- * Copyright 2014 Netflix, Inc.
+ * Copyright 2016 Netflix, Inc.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License")
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -14,19 +14,13 @@
  * limitations under the License.
  */
 
-package com.netflix.spinnaker.orca.pipeline.model
 
-import com.netflix.spinnaker.orca.ExecutionStatus
+package com.netflix.spinnaker.orca.pipeline
 
-class DefaultTask implements Task, Serializable {
-  String id
-  String name
-  Long startTime
-  Long endTime
-  String implementationClass
-  ExecutionStatus status = ExecutionStatus.NOT_STARTED
+import com.netflix.spinnaker.orca.pipeline.model.Execution
 
-  static boolean isBookend(Task task) {
-    return task.name == "stageEnd" || task.name == "stageStart"
-  }
+interface ExecutionRunner<T extends Execution> {
+  boolean supports(T subject)
+
+  T run(T subject)
 }

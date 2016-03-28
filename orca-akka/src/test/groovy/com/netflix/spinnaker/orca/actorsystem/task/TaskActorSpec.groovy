@@ -16,6 +16,7 @@
 
 package com.netflix.spinnaker.orca.actorsystem.task
 
+import akka.actor.ActorRef
 import akka.actor.ActorSystem
 import akka.actor.Props
 import akka.cluster.sharding.ShardRegion.Passivate
@@ -50,7 +51,12 @@ class TaskActorSpec extends Specification implements DataFixtures {
   def executionRepository = Mock(ExecutionRepository)
   def stageActor = new TestProbe(actorSystem)
   def props = Props.create(TaskActor, {
-    new TaskActor(applicationContext, executionRepository, { stageActor.ref() })
+    new TaskActor(applicationContext, executionRepository, { stageActor.ref() }) {
+      @Override
+      protected ActorRef stageActor() {
+        return stageActor.ref()
+      }
+    }
   })
   def parent = new TestProbe(actorSystem)
   def taskActor = new TestActorRef(actorSystem, props, parent.ref(), "TaskActor")

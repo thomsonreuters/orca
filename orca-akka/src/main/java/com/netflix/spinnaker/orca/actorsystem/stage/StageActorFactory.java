@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.netflix.spinnaker.orca.actorsystem.task;
+package com.netflix.spinnaker.orca.actorsystem.stage;
 
 import akka.actor.Props;
 import com.netflix.spinnaker.orca.actorsystem.ClusteredActorDefinition;
@@ -25,13 +25,13 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TaskActorFactory extends AbstractFactoryBean<ClusteredActorDefinition> {
+public class StageActorFactory extends AbstractFactoryBean<ClusteredActorDefinition> {
 
   private final ApplicationContext applicationContext;
   private final ExecutionRepository repository;
 
   @Autowired
-  public TaskActorFactory(
+  public StageActorFactory(
     ApplicationContext applicationContext,
     ExecutionRepository repository) {
     this.applicationContext = applicationContext;
@@ -46,8 +46,9 @@ public class TaskActorFactory extends AbstractFactoryBean<ClusteredActorDefiniti
   @Override
   protected ClusteredActorDefinition createInstance() {
     return ClusteredActorDefinition.create(
-      Props.create(TaskActor.class, applicationContext, repository),
-      new TaskMessageExtractor()
+      Props.create(StageActor.class, applicationContext, repository),
+      new StageMessageExtractor()
     );
   }
 }
+

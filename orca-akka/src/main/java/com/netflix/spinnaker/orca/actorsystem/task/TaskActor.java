@@ -23,6 +23,7 @@ import java.util.function.Function;
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import akka.actor.SupervisorStrategy.Stop$;
+import akka.cluster.sharding.ClusterSharding;
 import akka.cluster.sharding.ShardRegion.Passivate;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
@@ -30,6 +31,7 @@ import akka.japi.pf.ReceiveBuilder;
 import akka.persistence.AbstractPersistentActor;
 import akka.persistence.RecoveryCompleted;
 import com.netflix.spinnaker.orca.*;
+import com.netflix.spinnaker.orca.actorsystem.stage.StageActor;
 import com.netflix.spinnaker.orca.actorsystem.stage.StageMessage;
 import com.netflix.spinnaker.orca.actorsystem.stage.StageMessage.TaskComplete;
 import com.netflix.spinnaker.orca.actorsystem.stage.StageMessage.TaskIncomplete;
@@ -59,7 +61,6 @@ public class TaskActor extends AbstractPersistentActor {
 
   private final ApplicationContext applicationContext;
   private final ExecutionRepository executionRepository;
-  private final Function<ActorContext, ActorRef> stageActor;
 
   private TaskId identifier;
   private Task task;
@@ -67,11 +68,9 @@ public class TaskActor extends AbstractPersistentActor {
 
   public TaskActor(
     ApplicationContext applicationContext,
-    ExecutionRepository executionRepository,
-    Function<ActorContext, ActorRef> stageActor) {
+    ExecutionRepository executionRepository) {
     this.applicationContext = applicationContext;
     this.executionRepository = executionRepository;
-    this.stageActor = stageActor;
   }
 
   @Override
@@ -174,7 +173,7 @@ public class TaskActor extends AbstractPersistentActor {
       updateStatus(event);
       ActorRef actorRef = stageActor();
       log.info("Notifying {} that task is not yet complete", actorRef);
-      actorRef.tell(new TaskIncomplete(identifier.stage(), result.getStatus()), noSender());
+      actorRef.tell(new TaskIncomplete(identifier, result.getStatus()), noSender());
       retry();
     });
   }
@@ -184,7 +183,7 @@ public class TaskActor extends AbstractPersistentActor {
       updateStatus(event);
       ActorRef actorRef = stageActor();
       log.info("Notifying {} that task is complete", actorRef);
-      actorRef.tell(new TaskComplete(identifier.stage(), result.getStatus()), noSender());
+      actorRef.tell(new TaskComplete(identifier, result.getStatus()), noSender());
       shutdown();
     });
   }
@@ -194,7 +193,7 @@ public class TaskActor extends AbstractPersistentActor {
       updateStatus(event);
       ActorRef actorRef = stageActor();
       log.info("Notifying {} that task is being skipped", actorRef);
-      actorRef.tell(new StageMessage.TaskSkipped(identifier.stage(), taskStatus), noSender());
+      actorRef.tell(new StageMessage.TaskSkipped(identifier, taskStatus), noSender());
       shutdown();
     });
   }
@@ -204,7 +203,7 @@ public class TaskActor extends AbstractPersistentActor {
       updateStatus(event);
       ActorRef actorRef = stageActor();
       log.info("Notifying {} that task is canceled", actorRef);
-      actorRef.tell(new StageMessage.TaskCancelled(identifier.stage()), noSender());
+      actorRef.tell(new StageMessage.TaskCancelled(identifier), noSender());
       shutdown();
     });
   }
@@ -276,8 +275,8 @@ public class TaskActor extends AbstractPersistentActor {
     return stage.getTasks();
   }
 
-  private ActorRef stageActor() {
-    return stageActor.apply(context());
+  protected ActorRef stageActor() {
+    return ClusterSharding.get(context().system()).shardRegion(StageActor.class.getSimpleName());
   }
 
   private RuntimeException noSuchStage() {

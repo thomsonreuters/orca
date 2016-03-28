@@ -344,6 +344,7 @@ class JedisExecutionRepository implements ExecutionRepository {
       endTime          : execution.endTime?.toString(),
       executingInstance: execution.executingInstance,
       status           : execution.status?.name(),
+      runWithAkka      : String.valueOf(execution.runWithAkka),
       authentication   : mapper.writeValueAsString(execution.authentication),
       paused           : mapper.writeValueAsString(execution.paused)
     ]
@@ -412,6 +413,7 @@ class JedisExecutionRepository implements ExecutionRepository {
       execution.status = map.status ? ExecutionStatus.valueOf(map.status) : null
       execution.authentication = mapper.readValue(map.authentication, Execution.AuthenticationDetails)
       execution.paused = map.paused ? mapper.readValue(map.paused, Execution.PausedDetails) : null
+      execution.runWithAkka = map.runWithAkka
 
       def stageIds = map.stageIndex.tokenize(",")
       stageIds.each { stageId ->
