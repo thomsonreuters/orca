@@ -19,9 +19,10 @@ package com.netflix.spinnaker.orca.pipeline
 import com.netflix.spinnaker.orca.Task
 import com.netflix.spinnaker.orca.pipeline.model.Pipeline
 import com.netflix.spinnaker.orca.pipeline.model.PipelineStage
-import com.netflix.spinnaker.orca.pipeline.model.Stage
+import com.netflix.spinnaker.orca.pipeline.model.SyntheticStageOwner
 import spock.lang.Specification
 import spock.lang.Subject
+import spock.lang.Unroll
 import static com.netflix.spinnaker.orca.pipeline.StageDefinitionBuilder.TaskDefinition
 
 abstract class ExecutionRunnerSpec<R extends ExecutionRunner> extends Specification {
@@ -64,11 +65,37 @@ abstract class ExecutionRunnerSpec<R extends ExecutionRunner> extends Specificat
     execution = Pipeline.builder().withStage(stageType).build()
   }
 
+  @Unroll
+  def "marks start and end of each stage when there are #numTasks tasks"() {
+    given:
+    def stageDefBuilder = Stub(StageDefinitionBuilder) {
+      getType() >> stageType
+      taskGraph(_) >> (1..numTasks).collect { i -> new TaskDefinition("$i", Task) }
+    }
+    @Subject def runner = create(stageDefBuilder)
+
+    when:
+    runner.start(execution)
+
+    then:
+    with(execution.stages.first()) {
+      tasks.head().stageStart
+      tasks.tail().every { !it.stageStart }
+      tasks.reverse().head().stageEnd
+      tasks.reverse().tail().every { !it.stageEnd }
+    }
+
+    where:
+    stageType = "foo"
+    execution = Pipeline.builder().withStage(stageType).build()
+    numTasks << [1, 2, 3]
+  }
+
   def "builds each pre-stage"() {
     given:
     def stageDefBuilders = stageTypes.collect { stageType ->
-      def preStage1 = before(new PipelineStage(null, "${stageType}_pre1"))
-      def preStage2 = before(new PipelineStage(null, "${stageType}_pre2"))
+      def preStage1 = before(new PipelineStage(execution, "${stageType}_pre1"))
+      def preStage2 = before(new PipelineStage(execution, "${stageType}_pre2"))
       [
         Stub(StageDefinitionBuilder) {
           getType() >> stageType
@@ -102,8 +129,8 @@ abstract class ExecutionRunnerSpec<R extends ExecutionRunner> extends Specificat
   def "builds each post-stage"() {
     given:
     def stageDefBuilders = stageTypes.collect { stageType ->
-      def postStage1 = after(new PipelineStage(null, "${stageType}_post1"))
-      def postStage2 = after(new PipelineStage(null, "${stageType}_post2"))
+      def postStage1 = after(new PipelineStage(execution, "${stageType}_post1"))
+      def postStage2 = after(new PipelineStage(execution, "${stageType}_post2"))
       [
         Stub(StageDefinitionBuilder) {
           getType() >> stageType
@@ -136,8 +163,8 @@ abstract class ExecutionRunnerSpec<R extends ExecutionRunner> extends Specificat
 
   def "builds tasks for pre and post-stages"() {
     given:
-    def preStage = before(new PipelineStage(null, "${stageType}_pre"))
-    def postStage = after(new PipelineStage(null, "${stageType}_post"))
+    def preStage = before(new PipelineStage(execution, "${stageType}_pre"))
+    def postStage = after(new PipelineStage(execution, "${stageType}_post"))
     def stageDefBuilder = Stub(StageDefinitionBuilder) {
       getType() >> stageType
       taskGraph(_) >> [new TaskDefinition("${stageType}_1", Task)]
@@ -167,12 +194,12 @@ abstract class ExecutionRunnerSpec<R extends ExecutionRunner> extends Specificat
   }
 
   static PipelineStage before(PipelineStage stage) {
-    stage.syntheticStageOwner = Stage.SyntheticStageOwner.STAGE_BEFORE
+    stage.syntheticStageOwner = SyntheticStageOwner.STAGE_BEFORE
     return stage
   }
 
   static PipelineStage after(PipelineStage stage) {
-    stage.syntheticStageOwner = Stage.SyntheticStageOwner.STAGE_AFTER
+    stage.syntheticStageOwner = SyntheticStageOwner.STAGE_AFTER
     return stage
   }
 }
