@@ -65,7 +65,7 @@ class BakeStage implements BranchingStageDefinitionBuilder, RestartableStage {
     Set<String> deployRegions = stage.context.region ? [stage.context.region] as Set<String> : []
     deployRegions.addAll(stage.context.regions as Set<String> ?: [])
 
-    if (!deployRegions.contains("global")) {
+    if (!deployRegions.contains("global") && discoverBakeRegionsFromPipeline(stage.context)) {
       deployRegions.addAll(stage.execution.stages.findAll {
         it.type == "deploy"
       }.collect {
@@ -98,7 +98,7 @@ class BakeStage implements BranchingStageDefinitionBuilder, RestartableStage {
       stage.context.amiSuffix = now().format("yyyyMMddHHmmss", TimeZone.getTimeZone("UTC"))
     }
     return deployRegions.collect {
-      stage.context - ["regions": stage.context.regions] + ([
+      stage.context - ["regions": stage.context.regions] - ["bakeRegionDiscovery": stage.context.bakeRegionDiscovery] + ([
         type  : PIPELINE_CONFIG_TYPE,
         region: it,
         name  : "Bake in ${it}" as String
@@ -134,6 +134,10 @@ class BakeStage implements BranchingStageDefinitionBuilder, RestartableStage {
       ]
       new DefaultTaskResult(ExecutionStatus.SUCCEEDED, [:], globalContext)
     }
+  }
+
+  boolean discoverBakeRegionsFromPipeline(Map<String, Object> context) {
+    return context?.bakeRegionDiscovery == null || context.bakeRegionDiscovery;
   }
 
   protected Date now() {
